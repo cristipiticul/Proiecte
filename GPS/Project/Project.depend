@@ -1,0 +1,34 @@
+# depslib dependency file v1.0
+1446492677 source:d:\proiecte\faculta\gps\project\project.cpp
+	"GL/glut.h"
+	<gl/gl.h>
+	<stdio.h>
+
+1426342528 d:\proiecte\faculta\gps\project\gl\glut.h
+	"freeglut_std.h"
+
+1426342528 d:\proiecte\faculta\gps\project\gl\freeglut_std.h
+	<windows.h>
+	<EGL/egl.h>
+	<GLES/gl.h>
+	<GLES2/gl2.h>
+	<OpenGL/gl.h>
+	<OpenGL/glu.h>
+	<GL/gl.h>
+	<GL/glu.h>
+	<stdlib.h>
+
+1426342528 d:\proiecte\faculta\gps\project\include\gl\glut.h
+	"freeglut_std.h"
+
+1426342528 d:\proiecte\faculta\gps\project\include\gl\freeglut_std.h
+	<windows.h>
+	<EGL/egl.h>
+	<GLES/gl.h>
+	<GLES2/gl2.h>
+	<OpenGL/gl.h>
+	<OpenGL/glu.h>
+	<GL/gl.h>
+	<GL/glu.h>
+	<stdlib.h>
+
