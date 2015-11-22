@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1448118275 source:d:\projects\faculta\proiecte\gps\nana\main.cpp
+	<iostream>
+	<fstream>
+

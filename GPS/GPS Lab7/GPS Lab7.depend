@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1447144609 source:d:\projects\faculta\proiecte\gps\gps lab7\main.cpp
+	<GL/glut.h>
+	<gl/gl.h>
+

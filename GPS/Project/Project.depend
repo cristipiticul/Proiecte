@@ -32,3 +32,9 @@
 	<GL/glu.h>
 	<stdlib.h>
 
+1447144077 source:d:\projects\faculta\proiecte\gps\project\project.cpp
+	"GL/glut.h"
+	<gl/gl.h>
+	<stdio.h>
+	<vector>
+
