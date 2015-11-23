@@ -3,14 +3,43 @@
 
 #include "stdafx.h"
 #include <stdio.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <vector>
 #include "glut.h"
 #include <gl/gl.h>
 
 using namespace std;
 
-int screen_width=640;
-int screen_height=480;
+int screen_width = 640;
+int screen_height = 480;
+bool left_button_down = false;
+float camera_rotation_y = 0.0f, camera_rotation_xz = -M_PI / 4;
+const int ZOOM_MIN = 0;
+const int ZOOM_MAX = 10;
+/// The higher the zoom, the closer the camera will be to the center of the scene.
+int zoom = (ZOOM_MIN + ZOOM_MAX) / 2;
+const float DIST_MIN = 5.0f;
+const float DIST_MAX = 20.0f;
+
+
+void zoomIn() {
+	if (zoom + 1 <= ZOOM_MAX) {
+		zoom++;
+	}
+	else {
+		zoom = ZOOM_MAX;
+	}
+}
+
+void zoomOut() {
+	if (zoom - 1 >= ZOOM_MIN) {
+		zoom--;
+	}
+	else {
+		zoom = ZOOM_MIN;
+	}
+}
 
 void initOpenGL()
 {
@@ -19,7 +48,7 @@ void initOpenGL()
 	glViewport(0, 0, screen_width, screen_height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, (GLfloat)screen_width/(GLfloat)screen_height, 1.0f, 1000.0f);
+	gluPerspective(45.0f, (GLfloat)screen_width / (GLfloat)screen_height, 1.0f, 1000.0f);
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glMatrixMode(GL_MODELVIEW);
@@ -118,11 +147,11 @@ public:
 
 void draw(RectangularPiece piece)
 {
-	GLfloat mat_ambient[] = { 0.2, 0.2, 0.2, 0.2 };
-	GLfloat mat_diffuse[] = { piece.getRed(), piece.getGreen(), piece.getBlue(), 1.0 };
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat mat_shininess[] = { 100.0 };
-	
+	GLfloat mat_ambient[] = { 0.2f, 0.2f, 0.2f, 0.2f };
+	GLfloat mat_diffuse[] = { piece.getRed(), piece.getGreen(), piece.getBlue(), 1.0f };
+	GLfloat mat_specular[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	GLfloat mat_shininess[] = { 128.0f };
+
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
@@ -134,13 +163,13 @@ void draw(RectangularPiece piece)
 
 	float vertices[] = {
 		0.0f,   0.0f,  0.0f,
-		sizeX,   0.0f,  0.0f,
-		sizeX,   0.0f, sizeZ,
-		0.0f,   0.0f, sizeZ,
+		(float)sizeX,   0.0f,  0.0f,
+		(float)sizeX,   0.0f, (float)sizeZ,
+		0.0f,   0.0f, (float)sizeZ,
 		0.0f, height,  0.0f,
-		sizeX, height,  0.0f,
-		sizeX, height, sizeZ,
-		0.0f, height, sizeZ
+		(float)sizeX, height,  0.0f,
+		(float)sizeX, height, (float)sizeZ,
+		0.0f, height,(float)sizeZ
 	};
 
 	unsigned char indices[] = {
@@ -170,17 +199,21 @@ void draw(RectangularPiece piece)
 				glTranslatef(x, piece.getHeight() + 0.125f, z);
 				glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
 
-				/*{
+				glPushMatrix();
+				{
+				    /// Rotate to have the good face up (for lighting)
+					glRotatef(180.0f, 1.0f, 0.0f, 0.0f);
 					GLUquadric* quad = gluNewQuadric();
 					gluDisk(quad, 0.0, 0.25, 30, 1);
 					gluDeleteQuadric(quad);
-				}*/
+				}
+				glPopMatrix();
 
-				/*{
+				{
 					GLUquadric* quad = gluNewQuadric();
 					gluCylinder(quad, 0.25, 0.25, 0.125, 30, 1);
 					gluDeleteQuadric(quad);
-				}*/
+				}
 			}
 			glPopMatrix();
 		}
@@ -190,7 +223,7 @@ void draw(RectangularPiece piece)
 
 inline bool inside(int regionX, int regionZ, int sizeX, int sizeZ, int pointX, int pointZ)
 {
-	if(pointX > regionX && pointX < regionX + sizeX && pointZ >= regionZ && pointZ <= regionZ + sizeZ) {
+	if (pointX > regionX && pointX < regionX + sizeX && pointZ > regionZ && pointZ < regionZ + sizeZ) {
 		return true;
 	}
 	return false;
@@ -219,7 +252,7 @@ inline bool verticalSegmentsIntersect(int line1X1, int line1Z1, int line1X2, int
 {
 	if (line1X1 == line1X2 && line2X1 == line2X2 && line1X1 == line2X1
 		&& intervalIntersects(line1Z1, line1Z2, line2Z1, line2Z2)) {
-			return true;
+		return true;
 	}
 	return false;
 }
@@ -228,14 +261,14 @@ inline bool horizontalSegmentsIntersect(int line1X1, int line1Z1, int line1X2, i
 {
 	if (line1Z1 == line1Z2 && line2Z1 == line2Z2 && line1Z1 == line2Z1
 		&& intervalIntersects(line1X1, line1X2, line2X1, line2X2)) {
-			return true;
+		return true;
 	}
 	return false;
 }
 
 bool overlaps(int x, int z, int sizeX, int sizeZ, RectangularPiece& piece)
 {
-	if(inside(x, z, sizeX, sizeZ, piece.getX(), piece.getZ()) ||
+	if (inside(x, z, sizeX, sizeZ, piece.getX(), piece.getZ()) ||
 		inside(x, z, sizeX, sizeZ, piece.getX() + piece.getSizeX(), piece.getZ()) ||
 		inside(x, z, sizeX, sizeZ, piece.getX(), piece.getZ() + piece.getSizeZ()) ||
 		inside(x, z, sizeX, sizeZ, piece.getX() + piece.getSizeX(), piece.getZ() + piece.getSizeZ()) ||
@@ -244,7 +277,7 @@ bool overlaps(int x, int z, int sizeX, int sizeZ, RectangularPiece& piece)
 		horizontalSegmentsIntersect(x, z + sizeZ, x + sizeX, z + sizeZ, piece.getX(), piece.getZ() + piece.getSizeZ(), piece.getX() + piece.getSizeX(), piece.getZ() + piece.getSizeZ()) ||
 		verticalSegmentsIntersect(x, z, x, z + sizeZ, piece.getX(), piece.getZ(), piece.getX(), piece.getZ() + piece.getSizeZ()) ||
 		verticalSegmentsIntersect(x + sizeX, z, x + sizeX, z + sizeZ, piece.getX() + piece.getSizeX(), piece.getZ(), piece.getX() + piece.getSizeX(), piece.getZ() + piece.getSizeZ())) {
-			return true;
+		return true;
 	}
 	return false;
 }
@@ -263,10 +296,10 @@ public:
 	{
 		vector<RectangularPiece>::iterator it;
 		float maxY = 0.0f;
-		for(it = pieces.begin(); it != pieces.end(); it++) {
-			if(overlaps(x, z, sizeX, sizeZ, *it)) {
+		for (it = pieces.begin(); it != pieces.end(); it++) {
+			if (overlaps(x, z, sizeX, sizeZ, *it)) {
 				float y = it->getY() + it->getHeight();
-				if(y > maxY) {
+				if (y > maxY) {
 					maxY = y;
 				}
 			}
@@ -277,20 +310,20 @@ public:
 	void drawPieces()
 	{
 		vector<RectangularPiece>::iterator it;
-		for(it = pieces.begin(); it != pieces.end(); it++) {
+		for (it = pieces.begin(); it != pieces.end(); it++) {
 			draw(*it);
 		}
 	}
 };
 
-float GROUND_COLOR[3] = {1.0f, 0.0f, 0.0f};
+float GROUND_COLOR[3] = { 1.0f, 0.0f, 0.0f };
 RectangularPiece ground(-5, -5, 10, 10, -0.125, 0.125, GROUND_COLOR);
 
-float PIECE_COLOR[3] = {0.0f, 0.7f, 0.0f};
+float PIECE_COLOR[3] = { 0.0f, 0.7f, 0.0f };
 RectangularPiece piece(0, 0, 2, 4, 1, 0.5, PIECE_COLOR);
 
 
-float PIECE2_COLOR[3] = {0.0f, 0.0f, 0.7f};
+float PIECE2_COLOR[3] = { 0.0f, 0.0f, 0.7f };
 RectangularPiece piece2(-3, -3, 2, 4, 1, 0.5, PIECE2_COLOR);
 
 PiecesContainer piecesContainer;
@@ -300,13 +333,16 @@ void renderScene(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
-	gluLookAt(0.0, 5.0, -9.0, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0);
-	
-	GLfloat light_position[] = { 0.0, 10.0, 0.0, 1.0 };
-	GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 0.1 };
-	GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat light_spot_direction[] = { 0.0, -1.0, 0.0 };
+	float distance = DIST_MIN + (ZOOM_MAX - zoom + ZOOM_MIN) * (DIST_MAX - DIST_MIN) / (ZOOM_MAX - ZOOM_MIN);
+	float eyeX = sin(camera_rotation_y) * distance * sin(camera_rotation_xz);
+	float eyeY = cos(camera_rotation_xz) * distance;
+	float eyeZ = cos(camera_rotation_y) * distance * sin(camera_rotation_xz);
+	gluLookAt(eyeX, eyeY, eyeZ, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0);
+
+	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
+	GLfloat light_ambient[] = { 0.1f, 0.1f, 0.1f, 0.1f };
+	GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
@@ -322,13 +358,13 @@ void renderScene(void)
 
 void changeSize(int w, int h)
 {
-	screen_width=w;
-	screen_height=h;
+	screen_width = w;
+	screen_height = h;
 
-	if(h == 0)
+	if (h == 0)
 		h = 1;
 
-	float ratio = 1.0*w/h;
+	float ratio = 1.0*w / h;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -341,7 +377,7 @@ void changeSize(int w, int h)
 
 void processNormalKeys(unsigned char key, int __x, int __y)
 {
-	switch(key)
+	switch (key)
 	{
 	case 'w':
 		//process
@@ -368,8 +404,53 @@ void processNormalKeys(unsigned char key, int __x, int __y)
 		piecesContainer.addPiece(piece2);
 		glutPostRedisplay();
 		break;
+	case '+':
+		zoomIn();
+		break;
+	case '-':
+		zoomOut();
+		break;
 	}
 	piece2.setY(piecesContainer.findMaxY(piece2.getX(), piece2.getZ(), piece2.getSizeX(), piece2.getSizeZ()) + 1.0f);
+}
+
+int prev_x;
+int prev_y;
+void mouseFunc(int button, int state, int x, int y)
+{
+	if (button == GLUT_LEFT_BUTTON) {
+		if (state == GLUT_DOWN) {
+			left_button_down = true;
+			prev_x = x;
+			prev_y = y;
+		}
+		else {
+			left_button_down = false;
+		}
+	}
+}
+
+void mouseMotionFunc(int x, int y)
+{
+	if (left_button_down) {
+		camera_rotation_y += (x - prev_x) * 0.001953125f;
+		camera_rotation_xz += (y - prev_y) * 0.001953125f;
+
+		while (camera_rotation_y > 2 * M_PI) {
+			camera_rotation_y -= 2 * M_PI;
+		}
+		while (camera_rotation_y < 0) {
+			camera_rotation_y += 2 * M_PI;
+		}
+		if (camera_rotation_xz > -0.001953125f) {
+			camera_rotation_xz = -0.001953125f;
+		}
+		if (camera_rotation_xz < -M_PI / 2) {
+			camera_rotation_xz = -M_PI / 2;
+		}
+		prev_x = x;
+		prev_y = y;
+	}
 }
 
 int main(int argc, char* argv[])
@@ -391,6 +472,10 @@ int main(int argc, char* argv[])
 	glutReshapeFunc(changeSize);
 	//Keyboard callback function
 	glutKeyboardFunc(processNormalKeys);
+
+	glutMouseFunc(mouseFunc);
+	glutMotionFunc(mouseMotionFunc);
+
 	//Initialize some OpenGL parameters
 	initOpenGL();
 
