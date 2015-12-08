@@ -323,10 +323,18 @@ float PIECE_COLOR[3] = { 0.0f, 0.7f, 0.0f };
 RectangularPiece piece(0, 0, 2, 4, 1, 0.5, PIECE_COLOR);
 
 
-float PIECE2_COLOR[3] = { 0.0f, 0.0f, 0.7f };
-RectangularPiece piece2(-3, -3, 2, 4, 1, 0.5, PIECE2_COLOR);
+float CURRENT_PIECE_COLOR[3] = { 0.0f, 0.0f, 0.7f };
+RectangularPiece *currentPiece;
 
 PiecesContainer piecesContainer;
+
+void initPieces()
+{
+	currentPiece = new RectangularPiece(-3, -3, 2, 4, 1, 0.5, CURRENT_PIECE_COLOR);
+	
+	piecesContainer.addPiece(ground);
+	piecesContainer.addPiece(piece);
+}
 
 GLfloat y;
 void renderScene(void)
@@ -349,7 +357,7 @@ void renderScene(void)
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
 	piecesContainer.drawPieces();
-	draw(piece2);
+	draw(*currentPiece);
 
 	glColor3f(0.0f, 1.0f, 0.0f);
 
@@ -381,27 +389,35 @@ void processNormalKeys(unsigned char key, int __x, int __y)
 	{
 	case 'w':
 		//process
-		piece2.setZ(piece2.getZ() + 1.0f);
+		currentPiece->setZ(currentPiece->getZ() + 1.0f);
 		glutPostRedisplay();
 		break;
 	case 's':
 		//process
-		piece2.setZ(piece2.getZ() - 1.0f);
+		currentPiece->setZ(currentPiece->getZ() - 1.0f);
 		glutPostRedisplay();
 		break;
 	case 'd':
 		//process
-		piece2.setX(piece2.getX() + 1.0f);
+		currentPiece->setX(currentPiece->getX() + 1.0f);
 		glutPostRedisplay();
 		break;
 	case 'a':
 		//process
-		piece2.setX(piece2.getX() - 1.0f);
+		currentPiece->setX(currentPiece->getX() - 1.0f);
 		glutPostRedisplay();
 		break;
+	case 'r':
+		currentPiece = new RectangularPiece(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeZ(), currentPiece->getSizeX(), currentPiece->getY(), currentPiece->getHeight(), CURRENT_PIECE_COLOR);
+		break;
 	case ' ':
-		piece2.setY(piecesContainer.findMaxY(piece2.getX(), piece2.getZ(), piece2.getSizeX(), piece2.getSizeZ()));
-		piecesContainer.addPiece(piece2);
+		currentPiece->setY(piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ()));
+		piecesContainer.addPiece(*currentPiece);
+		{
+			RectangularPiece *oldPiece = currentPiece;
+			currentPiece = new RectangularPiece(oldPiece->getX(), oldPiece->getZ(), oldPiece->getSizeX(), oldPiece->getSizeZ(), oldPiece->getY(), oldPiece->getHeight(), CURRENT_PIECE_COLOR);
+			delete oldPiece;
+		}
 		glutPostRedisplay();
 		break;
 	case '+':
@@ -411,7 +427,7 @@ void processNormalKeys(unsigned char key, int __x, int __y)
 		zoomOut();
 		break;
 	}
-	piece2.setY(piecesContainer.findMaxY(piece2.getX(), piece2.getZ(), piece2.getSizeX(), piece2.getSizeZ()) + 1.0f);
+	currentPiece->setY(piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ()) + 1.0f);
 }
 
 int prev_x;
@@ -477,10 +493,9 @@ int main(int argc, char* argv[])
 	glutMotionFunc(mouseMotionFunc);
 
 	//Initialize some OpenGL parameters
+	initPieces();
 	initOpenGL();
 
-	piecesContainer.addPiece(ground);
-	piecesContainer.addPiece(piece);
 	//Starts the GLUT infinite loop
 	glutMainLoop();
 	return 0;
