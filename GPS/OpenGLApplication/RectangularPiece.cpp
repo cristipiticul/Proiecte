@@ -52,13 +52,38 @@ void RectangularPiece::draw()
 		4, 5, 6, 7
 	};
 
+	/*float normals[] = {
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f
+	};*/
+
+	float normals[] = {
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f,  1.0f, 0.0f,
+		0.0f,  1.0f, 0.0f,
+		0.0f,  1.0f, 0.0f,
+		0.0f,  1.0f, 0.0f
+	};
+
 	glPushMatrix();
 	glTranslatef(this->getX(), this->getY(), this->getZ());
 
 	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, vertices);
+	glNormalPointer(GL_FLOAT, 0, normals);
 	glDrawElements(GL_QUADS, 24, GL_UNSIGNED_BYTE, indices);
 	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 
 	for (int i = 0; i < sizeX; i++) {
 		float x = i + 0.5f;

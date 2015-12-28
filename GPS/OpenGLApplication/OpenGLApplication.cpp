@@ -84,6 +84,7 @@ static const GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
 static const GLfloat light_ambient[] = { 0.1f, 0.1f, 0.1f, 0.1f };
 static const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 static const GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static const GLfloat material_zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 GLfloat y;
 void renderScene(void)
@@ -100,6 +101,17 @@ void renderScene(void)
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+	glPushMatrix();
+	glMaterialfv(GL_FRONT, GL_AMBIENT, light_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, light_diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, light_specular);
+	glMaterialfv(GL_FRONT, GL_EMISSION, light_diffuse);
+	glTranslatef(light_position[0], light_position[1], light_position[2]);
+	glutSolidSphere(0.1, 10, 10);
+	//disable emmision
+	glMaterialfv(GL_FRONT, GL_EMISSION, material_zero);
+	glPopMatrix();
 
 	piecesContainer.drawPieces();
 	currentPiece->draw();
