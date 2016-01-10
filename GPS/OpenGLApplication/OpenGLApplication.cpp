@@ -1,7 +1,6 @@
 // OpenGLApplication.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>

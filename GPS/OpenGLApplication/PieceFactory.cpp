@@ -17,6 +17,8 @@ RectangularPiece* PieceFactory::getNewPiece()
 		return new SimplePiece(0, 0, 2, 4, 0.0f, 0.5f, colorGenerator.getCurrentColor());
 	case CORNER:
 		return new CornerPiece(0, 0, 0.0f, 0.5f, colorGenerator.getCurrentColor());
+	default:
+		return 0;
 	}
 }
 

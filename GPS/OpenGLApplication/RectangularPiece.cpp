@@ -1,4 +1,3 @@
-#include "StdAfx.h"
 #include "glut.h"
 #include <gl/gl.h>
 #include "RectangularPiece.h"

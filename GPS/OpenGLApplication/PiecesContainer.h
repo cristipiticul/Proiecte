@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
 #include "RectangularPiece.h"
 #include <vector>
 
