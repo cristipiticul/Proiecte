@@ -52,33 +52,36 @@ inline bool horizontalSegmentsIntersect(int line1X1, int line1Z1, int line1X2, i
 	return false;
 }
 
-bool overlaps(int x, int z, int sizeX, int sizeZ, RectangularPiece& piece)
+bool overlaps(int x, int z, int sizeX, int sizeZ, RectangularPiece* piece)
 {
-	if (inside(x, z, sizeX, sizeZ, piece.getX(), piece.getZ()) ||
-		inside(x, z, sizeX, sizeZ, piece.getX() + piece.getSizeX(), piece.getZ()) ||
-		inside(x, z, sizeX, sizeZ, piece.getX(), piece.getZ() + piece.getSizeZ()) ||
-		inside(x, z, sizeX, sizeZ, piece.getX() + piece.getSizeX(), piece.getZ() + piece.getSizeZ()) ||
-		inside(piece.getX(), piece.getZ(), piece.getSizeX(), piece.getSizeZ(), x, z) ||
-		horizontalSegmentsIntersect(x, z, x + sizeX, z, piece.getX(), piece.getZ(), piece.getX() + piece.getSizeX(), piece.getZ()) ||
-		horizontalSegmentsIntersect(x, z + sizeZ, x + sizeX, z + sizeZ, piece.getX(), piece.getZ() + piece.getSizeZ(), piece.getX() + piece.getSizeX(), piece.getZ() + piece.getSizeZ()) ||
-		verticalSegmentsIntersect(x, z, x, z + sizeZ, piece.getX(), piece.getZ(), piece.getX(), piece.getZ() + piece.getSizeZ()) ||
-		verticalSegmentsIntersect(x + sizeX, z, x + sizeX, z + sizeZ, piece.getX() + piece.getSizeX(), piece.getZ(), piece.getX() + piece.getSizeX(), piece.getZ() + piece.getSizeZ())) {
+	if (inside(x, z, sizeX, sizeZ, piece->getX(), piece->getZ()) ||
+		inside(x, z, sizeX, sizeZ, piece->getX() + piece->getSizeX(), piece->getZ()) ||
+		inside(x, z, sizeX, sizeZ, piece->getX(), piece->getZ() + piece->getSizeZ()) ||
+		inside(x, z, sizeX, sizeZ, piece->getX() + piece->getSizeX(), piece->getZ() + piece->getSizeZ()) ||
+		inside(piece->getX(), piece->getZ(), piece->getSizeX(), piece->getSizeZ(), x, z) ||
+		inside(piece->getX(), piece->getZ(), piece->getSizeX(), piece->getSizeZ(), x + sizeX, z) ||
+		inside(piece->getX(), piece->getZ(), piece->getSizeX(), piece->getSizeZ(), x, z + sizeZ) ||
+		inside(piece->getX(), piece->getZ(), piece->getSizeX(), piece->getSizeZ(), x + sizeX, z + sizeZ) ||
+		horizontalSegmentsIntersect(x, z, x + sizeX, z, piece->getX(), piece->getZ(), piece->getX() + piece->getSizeX(), piece->getZ()) ||
+		horizontalSegmentsIntersect(x, z + sizeZ, x + sizeX, z + sizeZ, piece->getX(), piece->getZ() + piece->getSizeZ(), piece->getX() + piece->getSizeX(), piece->getZ() + piece->getSizeZ()) ||
+		verticalSegmentsIntersect(x, z, x, z + sizeZ, piece->getX(), piece->getZ(), piece->getX(), piece->getZ() + piece->getSizeZ()) ||
+		verticalSegmentsIntersect(x + sizeX, z, x + sizeX, z + sizeZ, piece->getX() + piece->getSizeX(), piece->getZ(), piece->getX() + piece->getSizeX(), piece->getZ() + piece->getSizeZ())) {
 			return true;
 	}
 	return false;
 }
 
-void PiecesContainer::addPiece(RectangularPiece& piece)
+void PiecesContainer::addPiece(RectangularPiece* piece)
 {
 	pieces.push_back(piece);
 }
 float PiecesContainer::findMaxY(int x, int z, int sizeX, int sizeZ)
 {
-	vector<RectangularPiece>::iterator it;
+	vector<RectangularPiece*>::iterator it;
 	float maxY = 0.0f;
 	for (it = pieces.begin(); it != pieces.end(); it++) {
 		if (overlaps(x, z, sizeX, sizeZ, *it)) {
-			float y = it->getY() + it->getHeight();
+			float y = (*it)->getY() + (*it)->getHeight();
 			if (y > maxY) {
 				maxY = y;
 			}
@@ -89,8 +92,8 @@ float PiecesContainer::findMaxY(int x, int z, int sizeX, int sizeZ)
 
 void PiecesContainer::drawPieces()
 {
-	vector<RectangularPiece>::iterator it;
+	vector<RectangularPiece*>::iterator it;
 	for (it = pieces.begin(); it != pieces.end(); it++) {
-		it->draw();
+		(*it)->draw();
 	}
 }

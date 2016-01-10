@@ -1,5 +1,4 @@
-#ifndef RECTANGULAR_PIECE_H
-#define RECTANGULAR_PIECE_H
+#pragma once
 
 class RectangularPiece
 {
@@ -8,13 +7,14 @@ private:
 	int positionZ;
 	float positionY;
 
-	int initialSizeX;
-	int initialSizeZ;
+	int sizeX;
+	int sizeZ;
 	float height;
 
 	float color[3];
 public:
-	RectangularPiece(int positionX, int positionZ, int sizeX, int sizeZ, float positionY, float height, float color[]);
+	RectangularPiece(int positionX, int positionZ, int sizeX, int sizeZ, float positionY, float height, const float color[]);
+	void setColor(const float color[]);
 	int getSizeX();
 	int getSizeZ();
 	float getHeight();
@@ -24,10 +24,12 @@ public:
 	void setX(int newPositionX);
 	void setY(float newPositionY);
 	void setZ(int newPositionZ);
+	void setSizeX(int newSizeX);
+	void setSizeZ(int newSizeZ);
 	float getRed();
 	float getGreen();
 	float getBlue();
-	void draw();
+	void setGLMaterial();
+	virtual void rotate() = 0;
+	virtual void draw() = 0;
 };
-
-#endif

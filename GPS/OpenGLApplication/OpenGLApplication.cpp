@@ -7,21 +7,31 @@
 #include <vector>
 #include "glut.h"
 #include <gl/gl.h>
-#include "RectangularPiece.h"
+#include "SimplePiece.h"
+#include "CornerPiece.h"
 #include "PiecesContainer.h"
+#include "ColorGenerator.h"
+#include "PieceFactory.h"
 
 using namespace std;
 
 int screen_width = 640;
 int screen_height = 480;
 bool left_button_down = false;
-float camera_rotation_y = 0.0f, camera_rotation_xz = -M_PI / 4;
+float camera_rotation_y = M_PI, camera_rotation_xz = -M_PI / 4;
 const int ZOOM_MIN = 0;
 const int ZOOM_MAX = 10;
 /// The higher the zoom, the closer the camera will be to the center of the scene.
 int zoom = (ZOOM_MIN + ZOOM_MAX) / 2;
 const float DIST_MIN = 5.0f;
 const float DIST_MAX = 20.0f;
+const int GROUND_SIZE_X = 20;
+const int GROUND_SIZE_Z = 20;
+
+PieceFactory pieceFactory;
+ColorGenerator colorGenerator;
+
+bool wireframe = false;
 
 
 void zoomIn() {
@@ -51,7 +61,6 @@ void initOpenGL()
 	glLoadIdentity();
 	gluPerspective(45.0f, (GLfloat)screen_width / (GLfloat)screen_height, 1.0f, 1000.0f);
 	glEnable(GL_DEPTH_TEST);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glMatrixMode(GL_MODELVIEW);
 
 	glEnable(GL_LIGHTING);
@@ -61,23 +70,22 @@ void initOpenGL()
 
 
 float GROUND_COLOR[3] = { 1.0f, 0.0f, 0.0f };
-RectangularPiece ground(-5, -5, 10, 10, -0.125, 0.125, GROUND_COLOR);
+SimplePiece ground(-GROUND_SIZE_X / 2, -GROUND_SIZE_Z / 2, GROUND_SIZE_X, GROUND_SIZE_Z, -0.125, 0.125, GROUND_COLOR);
 
 float PIECE_COLOR[3] = { 0.0f, 0.7f, 0.0f };
-RectangularPiece piece(0, 0, 2, 4, 1, 0.5, PIECE_COLOR);
+SimplePiece piece(0, 0, 2, 4, 1, 0.5, PIECE_COLOR);
 
-
-float CURRENT_PIECE_COLOR[3] = { 0.0f, 0.0f, 0.7f };
 RectangularPiece *currentPiece;
 
 PiecesContainer piecesContainer;
 
 void initPieces()
 {
-	currentPiece = new RectangularPiece(-3, -3, 2, 4, 1, 0.5, CURRENT_PIECE_COLOR);
-	
-	piecesContainer.addPiece(ground);
-	piecesContainer.addPiece(piece);
+	currentPiece = pieceFactory.getNewPiece();
+	//currentPiece = new CornerPiece(-3, -3, 1, 0.5, colorGenerator.getCurrentColor());
+
+	piecesContainer.addPiece(&ground);
+	piecesContainer.addPiece(&piece);
 }
 
 static const GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
@@ -89,6 +97,12 @@ static const GLfloat material_zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 GLfloat y;
 void renderScene(void)
 {
+	if (wireframe) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
+	else {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 	float distance = DIST_MIN + (ZOOM_MAX - zoom + ZOOM_MIN) * (DIST_MAX - DIST_MIN) / (ZOOM_MAX - ZOOM_MIN);
@@ -140,38 +154,79 @@ void changeSize(int w, int h)
 	gluLookAt(0.0f, 0.0f, -50.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f);
 }
 
+void refreshCurrentPieceY() {
+	currentPiece->setY(piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ()) + 1.0f);
+}
+
+void moveCurrentPieceAboveGround() {
+	if (ground.getZ() < currentPiece->getZ()) {
+		currentPiece->setZ(currentPiece->getZ() - 1);
+	}
+	else {
+		currentPiece->setZ(ground.getZ());
+	}
+
+	if (ground.getZ() + ground.getSizeZ() > currentPiece->getZ() + currentPiece->getSizeZ()) {
+		currentPiece->setZ(currentPiece->getZ() + 1);
+	}
+	else {
+		currentPiece->setZ(ground.getZ() + ground.getSizeZ() - currentPiece->getSizeZ());
+	}
+
+	if (ground.getX() + ground.getSizeX() > currentPiece->getX() + currentPiece->getSizeX()) {
+		currentPiece->setX(currentPiece->getX() + 1);
+	}
+	else {
+		currentPiece->setX(ground.getX() + ground.getSizeX() - currentPiece->getSizeX());
+	}
+
+	if (ground.getX() < currentPiece->getX()) {
+		currentPiece->setX(currentPiece->getX() - 1);
+	}
+	else {
+		currentPiece->setX(ground.getX());
+	}
+}
+
+void changeCurrentPieceColor() {
+	currentPiece->setColor(colorGenerator.getNextColor());
+}
+
 void processNormalKeys(unsigned char key, int __x, int __y)
 {
 	switch (key)
 	{
-	case 'w':
-		currentPiece->setZ(currentPiece->getZ() + 1.0f);
-		glutPostRedisplay();
-		break;
-	case 's':
-		currentPiece->setZ(currentPiece->getZ() - 1.0f);
-		glutPostRedisplay();
-		break;
-	case 'd':
-		currentPiece->setX(currentPiece->getX() + 1.0f);
-		glutPostRedisplay();
-		break;
-	case 'a':
-		currentPiece->setX(currentPiece->getX() - 1.0f);
-		glutPostRedisplay();
-		break;
 	case 'r':
-		currentPiece = new RectangularPiece(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeZ(), currentPiece->getSizeX(), currentPiece->getY(), currentPiece->getHeight(), CURRENT_PIECE_COLOR);
+	{
+		currentPiece->rotate();
+		moveCurrentPieceAboveGround();
+		refreshCurrentPieceY();
+		break;
+	}
+	case 'w':
+		wireframe = !wireframe;
+		break;
+	case 't':
+		pieceFactory.nextPieceType();
+		{
+			RectangularPiece *oldPiece = currentPiece;
+			currentPiece = pieceFactory.getNewPiece();
+			delete oldPiece;
+		}
+		refreshCurrentPieceY();
 		break;
 	case ' ':
 		currentPiece->setY(piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ()));
-		piecesContainer.addPiece(*currentPiece);
+		piecesContainer.addPiece(currentPiece);
 		{
 			RectangularPiece *oldPiece = currentPiece;
-			currentPiece = new RectangularPiece(oldPiece->getX(), oldPiece->getZ(), oldPiece->getSizeX(), oldPiece->getSizeZ(), oldPiece->getY(), oldPiece->getHeight(), CURRENT_PIECE_COLOR);
-			delete oldPiece;
+			currentPiece = pieceFactory.getNewPiece();
 		}
+		refreshCurrentPieceY();
 		glutPostRedisplay();
+		break;
+	case 'c':
+		changeCurrentPieceColor();
 		break;
 	case '+':
 		zoomIn();
@@ -180,20 +235,54 @@ void processNormalKeys(unsigned char key, int __x, int __y)
 		zoomOut();
 		break;
 	}
-	currentPiece->setY(piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ()) + 1.0f);
+}
+
+void processSpecialKeys(int key, int x, int y)
+{
+	bool changed = false;
+	switch (key) {
+	case GLUT_KEY_UP:
+		changed = true;
+		currentPiece->setZ(currentPiece->getZ() - 1);
+		break;
+	case GLUT_KEY_DOWN:
+		changed = true;
+		currentPiece->setZ(currentPiece->getZ() + 1);
+		break;
+	case GLUT_KEY_RIGHT:
+		changed = true;
+		currentPiece->setX(currentPiece->getX() + 1);
+		break;
+	case GLUT_KEY_LEFT:
+		changed = true;
+		currentPiece->setX(currentPiece->getX() - 1);
+		break;
+	}
+	if (changed) {
+		refreshCurrentPieceY();
+		moveCurrentPieceAboveGround();
+		glutPostRedisplay();
+	}
 }
 
 int prev_x;
 int prev_y;
+const int center_x = screen_width / 2;
+const int center_y = screen_height / 2;
 void mouseFunc(int button, int state, int x, int y)
 {
 	if (button == GLUT_LEFT_BUTTON) {
 		if (state == GLUT_DOWN) {
+			glutSetCursor(GLUT_CURSOR_NONE);
 			left_button_down = true;
+			x = center_x;
+			y = center_y;
 			prev_x = x;
 			prev_y = y;
+			glutWarpPointer(x, y);
 		}
 		else {
+			glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
 			left_button_down = false;
 		}
 	}
@@ -217,8 +306,15 @@ void mouseMotionFunc(int x, int y)
 		if (camera_rotation_xz < -M_PI / 2) {
 			camera_rotation_xz = -M_PI / 2;
 		}
-		prev_x = x;
-		prev_y = y;
+		if (abs(x - center_x) + abs(y - center_y) >= 20) {
+			prev_x = center_x;
+			prev_y = center_y;
+			glutWarpPointer(center_x, center_y);
+		}
+		else {
+			prev_x = x;
+			prev_y = y;
+		}
 	}
 }
 
@@ -241,6 +337,7 @@ int main(int argc, char* argv[])
 	glutReshapeFunc(changeSize);
 	//Keyboard callback function
 	glutKeyboardFunc(processNormalKeys);
+	glutSpecialFunc(processSpecialKeys);
 
 	glutMouseFunc(mouseFunc);
 	glutMotionFunc(mouseMotionFunc);
