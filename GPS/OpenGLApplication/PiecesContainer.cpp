@@ -73,6 +73,12 @@ void PiecesContainer::addPiece(RectangularPiece* piece)
 {
 	pieces.push_back(piece);
 }
+RectangularPiece* PiecesContainer::removeLast()
+{
+	RectangularPiece* lastPiece = pieces.back();
+	pieces.pop_back();
+	return lastPiece;
+}
 float PiecesContainer::findMaxY(int x, int z, int sizeX, int sizeZ)
 {
 	vector<RectangularPiece*>::iterator it;
@@ -94,4 +100,9 @@ void PiecesContainer::drawPieces()
 	for (it = pieces.begin(); it != pieces.end(); it++) {
 		(*it)->draw();
 	}
+}
+
+size_t PiecesContainer::size()
+{
+	return pieces.size();
 }

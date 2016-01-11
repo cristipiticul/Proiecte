@@ -12,6 +12,8 @@ private:
 
 public:
 	void addPiece(RectangularPiece* piece);
+	RectangularPiece* removeLast();
 	float findMaxY(int x, int z, int sizeX, int sizeZ);
 	void drawPieces();
+	size_t size();
 };

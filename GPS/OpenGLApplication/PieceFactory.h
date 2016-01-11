@@ -9,7 +9,7 @@ public:
 	void nextPieceType();
 private:
 	enum PieceType {
-		SIMPLE, CORNER
+		SIMPLE, EDGE, CORNER
 	};
 	PieceType pieceType;
 };
