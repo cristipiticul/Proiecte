@@ -106,7 +106,7 @@ void initOpenGL()
 	glMatrixMode(GL_MODELVIEW);
 
 	glGenTextures(1, &skyboxTexture);
-	loadTGA("D:\\Proiecte\Git\\Proiecte\\GPS\\OpenGLApplication\\tex\\bear.tga", skyboxTexture);
+	loadTGA("D:\\Projects\\Faculta\\Proiecte\\GPS\\OpenGLApplication\\tex\\Skybox_1.tga", skyboxTexture);
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_NORMALIZE);
