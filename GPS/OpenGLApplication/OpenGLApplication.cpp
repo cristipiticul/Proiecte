@@ -52,6 +52,10 @@ volatile int prev_y;
 const int center_x = screen_width / 2;
 const int center_y = screen_height / 2;
 
+volatile bool animate = false;
+volatile float animation_destination_y;
+const float ANIMATION_STEP_SIZE = 0.05f;
+
 float GROUND_COLOR[3] = { 1.0f, 0.0f, 0.0f };
 SimplePiece ground(-GROUND_SIZE_X / 2, -GROUND_SIZE_Z / 2, GROUND_SIZE_X, GROUND_SIZE_Z, -0.125, 0.125, GROUND_COLOR);
 
@@ -106,7 +110,7 @@ void initOpenGL()
 	glMatrixMode(GL_MODELVIEW);
 
 	glGenTextures(1, &skyboxTexture);
-	loadTGA("D:\\Projects\\Faculta\\Proiecte\\GPS\\OpenGLApplication\\tex\\Skybox_1.tga", skyboxTexture);
+	loadTGA("tex\\Skybox_1.tga", skyboxTexture);
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_NORMALIZE);
@@ -151,23 +155,64 @@ void drawSkybox()
 
 	glBegin(GL_QUADS);
 	//left face
-	//glTexCoord2f(0.0f, 1.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE);
-	//glTexCoord2f(0.25f, 1.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE);
-	//glTexCoord2f(0.25f, 2.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, -SKYBOX_SIZE);
-	//glTexCoord2f(0.0f, 2.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, SKYBOX_SIZE);
 	glNormal3f(1.0f, 0.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, -SKYBOX_SIZE);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(0.0f, 1.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(0.25f, 1.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE);
+	glTexCoord2f(0.25f, 2.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, -SKYBOX_SIZE);
+	glTexCoord2f(0.0f, 2.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, SKYBOX_SIZE);
+	
+	//right face
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glTexCoord2f(0.5f, 1.0f / 3.0f); glVertex3f(SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE);
+	glTexCoord2f(0.75f, 1.0f / 3.0f); glVertex3f(SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(0.75f, 2.0f / 3.0f); glVertex3f(SKYBOX_SIZE, SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(0.5f, 2.0f / 3.0f); glVertex3f(SKYBOX_SIZE, SKYBOX_SIZE, -SKYBOX_SIZE);
+
+	//front face
+	glNormal3f(0.0f, 0.0f, 1.0f);
+	glTexCoord2f(0.25f, 1.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE);
+	glTexCoord2f(0.5f, 1.0f / 3.0f); glVertex3f(SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE);
+	glTexCoord2f(0.5f, 2.0f / 3.0f); glVertex3f(SKYBOX_SIZE, SKYBOX_SIZE, -SKYBOX_SIZE);
+	glTexCoord2f(0.25f, 2.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, -SKYBOX_SIZE);
+
+	//back face
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glTexCoord2f(0.75f, 1.0f / 3.0f); glVertex3f(SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(1.0f, 1.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(1.0f, 2.0f / 3.0f); glVertex3f(-SKYBOX_SIZE, SKYBOX_SIZE, SKYBOX_SIZE);
+	glTexCoord2f(0.75f, 2.0f / 3.0f); glVertex3f(SKYBOX_SIZE, SKYBOX_SIZE, SKYBOX_SIZE);
 	glEnd();
 
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_TEXTURE_2D);
 }
 
+void animationDone() {
+	animate = false;
+	currentPiece->setY(animation_destination_y);
+	piecesContainer.addPiece(currentPiece);
+	{
+		RectangularPiece *oldPiece = currentPiece;
+		currentPiece = pieceFactory.getNewPiece();
+	}
+	refreshCurrentPieceY();
+}
+
+void animationStep() {
+	float newY = currentPiece->getY() - ANIMATION_STEP_SIZE;
+	if (newY < animation_destination_y) {
+		animationDone();
+	}
+	else {
+		currentPiece->setY(newY);
+	}
+}
+
 void renderScene(void)
 {
+	if (animate) {
+		animationStep();
+	}
 	if (wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
@@ -215,7 +260,7 @@ void renderScene(void)
 	glMaterialfv(GL_FRONT, GL_EMISSION, material_zero);
 	glPopMatrix();
 
-	//drawSkybox();
+	drawSkybox();
 	piecesContainer.drawPieces();
 
 
@@ -295,126 +340,127 @@ void processNormalKeys(unsigned char key, int __x, int __y)
 		wireframe = !wireframe;
 		break;
 	}
-	if (userInterfaceMode == BUILD) {
-		switch (key)
-		{
-		case 'r':
-		{
-			currentPiece->rotate();
-			moveCurrentPieceAboveGround();
-			refreshCurrentPieceY();
-			break;
-		}
-		case 't':
-			pieceFactory.nextPieceType();
+	if (!animate) {
+		if (userInterfaceMode == BUILD) {
+			switch (key)
 			{
-				RectangularPiece *oldPiece = currentPiece;
-				currentPiece = pieceFactory.getNewPiece();
-				delete oldPiece;
-			}
-			refreshCurrentPieceY();
-			break;
-		case ' ':
-			currentPiece->setY(piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ()));
-			piecesContainer.addPiece(currentPiece);
+			case 'r':
 			{
-				RectangularPiece *oldPiece = currentPiece;
-				currentPiece = pieceFactory.getNewPiece();
-			}
-			refreshCurrentPieceY();
-			glutPostRedisplay();
-			break;
-		case 'c':
-			changeCurrentPieceColor();
-			break;
-		case '+':
-			zoomIn();
-			break;
-		case '-':
-			zoomOut();
-			break;
-		case 'z':
-			if (piecesContainer.size() > 1) {
-				currentPiece = piecesContainer.removeLast();
+				currentPiece->rotate();
+				moveCurrentPieceAboveGround();
 				refreshCurrentPieceY();
+				break;
 			}
-			break;
-		case 'v':
-			camera_rotation_xz = CAMERA_ROTATION_XZ_DEFAULT_VIEW;
-			camera_rotation_y = CAMERA_ROTATION_Y_DEFAULT_VIEW;
-			camera_position_x = CAMERA_POSITION_X_DEFAULT_VIEW;
-			camera_position_y = CAMERA_POSITION_Y_DEFAULT_VIEW;
-			camera_position_z = CAMERA_POSITION_Z_DEFAULT_VIEW;
-			glutSetCursor(GLUT_CURSOR_NONE);
-			prev_x = center_x;
-			prev_y = center_y;
-			glutWarpPointer(center_x, center_y);
-			glEnable(GL_LIGHT1);
-			userInterfaceMode = VIEW;
-			break;
+			case 't':
+				pieceFactory.nextPieceType();
+				{
+					RectangularPiece *oldPiece = currentPiece;
+					currentPiece = pieceFactory.getNewPiece();
+					delete oldPiece;
+				}
+				refreshCurrentPieceY();
+				break;
+			case ' ':
+				animation_destination_y = piecesContainer.findMaxY(currentPiece->getX(), currentPiece->getZ(), currentPiece->getSizeX(), currentPiece->getSizeZ());
+				animate = true;
+
+
+				glutPostRedisplay();
+				break;
+			case 'c':
+				changeCurrentPieceColor();
+				break;
+			case '+':
+				zoomIn();
+				break;
+			case '-':
+				zoomOut();
+				break;
+			case 'z':
+				if (piecesContainer.size() > 1) {
+					currentPiece = piecesContainer.removeLast();
+					refreshCurrentPieceY();
+				}
+				break;
+			case 'v':
+				camera_rotation_xz = CAMERA_ROTATION_XZ_DEFAULT_VIEW;
+				camera_rotation_y = CAMERA_ROTATION_Y_DEFAULT_VIEW;
+				camera_position_x = CAMERA_POSITION_X_DEFAULT_VIEW;
+				camera_position_y = CAMERA_POSITION_Y_DEFAULT_VIEW;
+				camera_position_z = CAMERA_POSITION_Z_DEFAULT_VIEW;
+				glutSetCursor(GLUT_CURSOR_NONE);
+				prev_x = center_x;
+				prev_y = center_y;
+				glutWarpPointer(center_x, center_y);
+				glEnable(GL_LIGHT1);
+				userInterfaceMode = VIEW;
+				break;
+			}
 		}
-	}
-	else if (userInterfaceMode == VIEW) {
-		switch (key) {
-		case 'v':
-			glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
-			camera_rotation_xz = CAMERA_ROTATION_XZ_DEFAULT_BUILD;
-			camera_rotation_y = CAMERA_ROTATION_Y_DEFAULT_BUILD;
-			glDisable(GL_LIGHT1);
-			userInterfaceMode = BUILD;
-			break;
+		else if (userInterfaceMode == VIEW) {
+			switch (key) {
+			case 'v':
+				glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
+				camera_rotation_xz = CAMERA_ROTATION_XZ_DEFAULT_BUILD;
+				camera_rotation_y = CAMERA_ROTATION_Y_DEFAULT_BUILD;
+				glDisable(GL_LIGHT1);
+				userInterfaceMode = BUILD;
+				break;
+			}
 		}
 	}
 }
 
 void processSpecialKeys(int key, int x, int y)
 {
-	if (userInterfaceMode == BUILD) {
-		bool changed = false;
-		switch (key) {
-		case GLUT_KEY_UP:
-			changed = true;
-			currentPiece->setZ(currentPiece->getZ() - 1);
-			break;
-		case GLUT_KEY_DOWN:
-			changed = true;
-			currentPiece->setZ(currentPiece->getZ() + 1);
-			break;
-		case GLUT_KEY_RIGHT:
-			changed = true;
-			currentPiece->setX(currentPiece->getX() + 1);
-			break;
-		case GLUT_KEY_LEFT:
-			changed = true;
-			currentPiece->setX(currentPiece->getX() - 1);
-			break;
+	if (!animate) {
+		if (userInterfaceMode == BUILD) {
+			bool changed = false;
+			switch (key) {
+			case GLUT_KEY_UP:
+				changed = true;
+				currentPiece->setZ(currentPiece->getZ() - 1);
+				break;
+			case GLUT_KEY_DOWN:
+				changed = true;
+				currentPiece->setZ(currentPiece->getZ() + 1);
+				break;
+			case GLUT_KEY_RIGHT:
+				changed = true;
+				currentPiece->setX(currentPiece->getX() + 1);
+				break;
+			case GLUT_KEY_LEFT:
+				changed = true;
+				currentPiece->setX(currentPiece->getX() - 1);
+				break;
+			}
+			if (changed) {
+				refreshCurrentPieceY();
+				moveCurrentPieceAboveGround();
+				glutPostRedisplay();
+			}
 		}
-		if (changed) {
-			refreshCurrentPieceY();
-			moveCurrentPieceAboveGround();
-			glutPostRedisplay();
-		}
-	}
-	else if (userInterfaceMode == VIEW) {
-		switch (key) {
-		case GLUT_KEY_UP:
-			camera_position_x += camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
-			camera_position_y += camera_speed * sin(camera_rotation_xz);
-			camera_position_z += camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
-			break;
-		case GLUT_KEY_DOWN:
-			camera_position_x -= camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
-			camera_position_y -= camera_speed * sin(camera_rotation_xz);
-			camera_position_z -= camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
-			break;
-		case GLUT_KEY_RIGHT:
-			camera_position_x -= camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
-			camera_position_z += camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
-			break;
-		case GLUT_KEY_LEFT:
-			camera_position_x += camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
-			camera_position_z -= camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
-			break;
+		else if (userInterfaceMode == VIEW) {
+			switch (key) {
+			case GLUT_KEY_UP:
+				camera_position_x += camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
+				camera_position_y += camera_speed * sin(camera_rotation_xz);
+				camera_position_z += camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
+				break;
+			case GLUT_KEY_DOWN:
+				camera_position_x -= camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
+				camera_position_y -= camera_speed * sin(camera_rotation_xz);
+				camera_position_z -= camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
+				break;
+			case GLUT_KEY_RIGHT:
+				camera_position_x -= camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
+				camera_position_z += camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
+				break;
+			case GLUT_KEY_LEFT:
+				camera_position_x += camera_speed * sin(camera_rotation_y) * cos(camera_rotation_xz);
+				camera_position_z -= camera_speed * cos(camera_rotation_y) * cos(camera_rotation_xz);
+				break;
+			}
 		}
 	}
 }
