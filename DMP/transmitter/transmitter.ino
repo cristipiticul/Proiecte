@@ -44,7 +44,7 @@ void loop() {
   digitalWrite(ledPin, LOW);
   delayMicroseconds(writeDelay);
 
-  int readData = (analogRead(16) - 150) / 97;
+  int readData = (analogRead(16) - 150) / 59;
   Serial.print("I received: ");
   Serial.println(readData, DEC);
 

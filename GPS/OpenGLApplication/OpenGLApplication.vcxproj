@@ -98,7 +98,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Debug\OpenGLApplication.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <ObjectFileName>.\Debug\</ObjectFileName>
       <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
@@ -124,16 +124,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ColorGenerator.cpp" />
+    <ClCompile Include="CornerPiece.cpp" />
+    <ClCompile Include="EdgePiece.cpp" />
     <ClCompile Include="OpenGLApplication.cpp" />
-    <ClCompile Include="StdAfx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</PrecompiledHeaderFile>
-    </ClCompile>
+    <ClCompile Include="PieceFactory.cpp" />
+    <ClCompile Include="PiecesContainer.cpp" />
+    <ClCompile Include="RectangularPiece.cpp" />
+    <ClCompile Include="SimplePiece.cpp" />
+    <ClCompile Include="tga.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="ColorGenerator.h" />
+    <ClInclude Include="CornerPiece.h" />
+    <ClInclude Include="PieceFactory.h" />
+    <ClInclude Include="PiecesContainer.h" />
+    <ClInclude Include="RectangularPiece.h" />
+    <ClInclude Include="SimplePiece.h" />
+    <ClInclude Include="tga.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="ReadMe.txt" />
