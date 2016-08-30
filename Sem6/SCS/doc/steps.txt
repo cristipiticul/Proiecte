@@ -1,0 +1,166 @@
+1. Getting a code for the user
+POST https://graph.facebook.com/oauth/device?type=device_code&client_id=<YOUR_APP_ID>&scope=<COMMA_SEPARATED_PERMISSION_NAMES>
+POST https://graph.facebook.com/oauth/device?type=device_code&client_id=800714773394140&scope=user_posts
+
+Result:
+{"code":"7e4f651356978e572edc2daf8f1673c4","user_code":"ZSM7T4IJ","verification_uri":"https:\/\/www.facebook.com\/device","expires_in":420,"interval":5}
+=============================================================
+2. Enter the code on https://www.facebook.com/device
+=============================================================
+3. Poll for authorization
+POST https://graph.facebook.com/oauth/device?type=device_token&client_id=800714773394140&code=7e4f651356978e572edc2daf8f1673c4
+
+Result:
+{"access_token":"CAALYPuZBictwBACmi0tN32ZA52B3soBEnlTJRR7Tdy6rnswnZAYPY7FqNZAuOUxcL95T5OZBOlbZAYBPiBJyMdkiDDZA055HrNFZAFdwAZBKuo7Cbf6ZBZAtEjZCkMu7t5WIx1b9p79JT66viiYXLFZCOKqJjcMuQBiStr2NZAicSUJfoiDe0krConS55BjF0hWd74FVHKZATZC6KRBEqwZDZD","expires_in":5176762}
+=============================================================
+4. Get the news feed:
+GET https://graph.facebook.com/v2.5/me/feed?access_token=<USER_ACCESS_TOKEN>
+GET https://graph.facebook.com/v2.5/me/feed?access_token=CAALYPuZBictwBACmi0tN32ZA52B3soBEnlTJRR7Tdy6rnswnZAYPY7FqNZAuOUxcL95T5OZBOlbZAYBPiBJyMdkiDDZA055HrNFZAFdwAZBKuo7Cbf6ZBZAtEjZCkMu7t5WIx1b9p79JT66viiYXLFZCOKqJjcMuQBiStr2NZAicSUJfoiDe0krConS55BjF0hWd74FVHKZATZC6KRBEqwZDZD
+
+Result:
+On Arduino:
+{"error":{"message":"You must use https:\/\/ when passing an access token","type":"OAuthException","code":1,"fbtrace_id":"GCVp8zH8pCL"}} 
+On web browser:
+{
+   "data": [
+      {
+         "message": "Janie's got a gun",
+         "story": "Flavia Pop with Ioana Georgiana and 2 others at Poligon de tir Cluj Shooting Center.",
+         "created_time": "2016-02-27T11:56:17+0000",
+         "id": "829903667155946_825599620919684"
+      },
+      {
+         "message": "Cozonac.",
+         "story": "Ioana Georgiana checked in to Flying Circus PUB with Mihai Moldovan and 2 others.",
+         "created_time": "2015-12-29T00:22:44+0000",
+         "id": "829903667155946_794293377383642"
+      },
+      {
+         "message": "\ud83d\ude04",
+         "story": "Flavia Pop with Maria Militaru and 2 others at Patinuar Cora.",
+         "created_time": "2015-12-27T17:47:40+0000",
+         "id": "829903667155946_793680394111607"
+      },
+      {
+         "story": "Adriana Adi shared a photo to your Timeline.",
+         "created_time": "2015-12-23T17:01:40+0000",
+         "id": "829903667155946_720926021342449"
+      },
+      {
+         "story": "Cristi Militaru shared a page.",
+         "created_time": "2015-12-04T06:11:28+0000",
+         "id": "829903667155946_782545361891777"
+      },
+      {
+         "story": "Cristi Militaru shared POCO LOCO PIZZA's post.",
+         "created_time": "2015-11-17T19:18:27+0000",
+         "id": "829903667155946_776101879202792"
+      },
+      {
+         "story": "Toma Corina Lavinia and 54 others wrote on your Timeline.",
+         "created_time": "2015-10-26T18:39:24+0000",
+         "id": "829903667155946_767940946685552"
+      },
+      {
+         "message": ";)",
+         "created_time": "2015-10-25T09:23:50+0000",
+         "id": "829903667155946_831953986902694"
+      },
+      {
+         "story": "Cristi Militaru updated his cover photo.",
+         "created_time": "2015-10-22T13:04:54+0000",
+         "id": "829903667155946_766493760163604"
+      },
+      {
+         "message": "The bad touch!",
+         "story": "Flavia Pop with Ioana Georgiana and 2 others at New Janis Club.",
+         "created_time": "2015-08-29T02:12:55+0000",
+         "id": "829903667155946_742236385922675"
+      },
+      {
+         "message": "Dc nu dormi?",
+         "created_time": "2015-07-15T22:19:41+0000",
+         "id": "829903667155946_716633608482953"
+      },
+      {
+         "message": "Ms pt accept... multa sanatate tuturor!imi pare bn ca v-am cunoscut...o seara minunata...tie si familie!!!",
+         "created_time": "2015-07-14T17:24:12+0000",
+         "id": "829903667155946_716122958534018"
+      },
+      {
+         "message": "Chintesen\u0163a prieteniei nu consta \u00een eschivarea solidarita\u0163ii \u00een momente grele #BogdanB\u00eetfoi2015",
+         "story": "Cristi Militaru with Bogdan B\u00eetfoi and 5 others at Casa Pira\u0163ilor.",
+         "created_time": "2015-06-22T22:28:14+0000",
+         "id": "829903667155946_704384219707892"
+      },
+      {
+         "message": "Pentru SQL si NoSQL. Inca e under development. Powered by Militaru Gabriel. Felicitari :*.",
+         "created_time": "2015-05-24T14:22:53+0000",
+         "id": "829903667155946_687565971389717"
+      },
+      {
+         "message": "Cel mai frumos site! \u003C3",
+         "story": "Cristi Militaru likes a link.",
+         "created_time": "2015-05-24T14:14:00+0000",
+         "id": "829903667155946_687562851390029"
+      },
+      {
+         "message": "#swag",
+         "story": "Paul Vasile with Cristi Militaru.",
+         "created_time": "2015-05-21T09:21:56+0000",
+         "id": "829903667155946_685068584972789"
+      },
+      {
+         "story": "Bogdan B\u00eetfoi added a new photo \u2014 with Paul Vasile and 4 others.",
+         "created_time": "2015-05-19T15:37:43+0000",
+         "id": "829903667155946_684063038406677"
+      },
+      {
+         "message": "\u003C3 inimiooooore #yolo #lmacris #valoare",
+         "story": "Vlad Cosma with Antonia Maria Turdean and 7 others.",
+         "created_time": "2015-05-16T18:43:51+0000",
+         "id": "829903667155946_682823181863996"
+      },
+      {
+         "story": "Cristi Militaru marked himself safe during Nepal Earthquake, May 12.",
+         "created_time": "2015-05-14T16:56:19+0000",
+         "id": "829903667155946_681259198687061"
+      },
+      {
+         "message": "Opera lui Bogdan Burca.",
+         "story": "Cristi Militaru added a new photo.",
+         "created_time": "2015-04-05T03:07:00+0000",
+         "id": "829903667155946_660205950792386"
+      },
+      {
+         "message": "Super tare :D.",
+         "created_time": "2015-01-29T10:15:56+0000",
+         "id": "829903667155946_618599528286362"
+      },
+      {
+         "story": "Cristi Militaru shared a link.",
+         "created_time": "2015-01-16T14:59:54+0000",
+         "id": "829903667155946_611350922344556"
+      },
+      {
+         "message": "http://flights.web44.net/changes.php",
+         "created_time": "2015-01-14T14:50:09+0000",
+         "id": "829903667155946_610331899113125"
+      },
+      {
+         "message": "There And Back Again :-D",
+         "story": "Bogdan B\u00eetfoi with Eugen Pintea and 6 others.",
+         "created_time": "2014-12-22T18:23:36+0000",
+         "id": "829903667155946_592184527594529"
+      },
+      {
+         "story": "Andreea Lazar added a new photo \u2014 with Alexandra Hreniuc and 3 others in Cluj-Napoca.",
+         "created_time": "2014-12-15T19:52:57+0000",
+         "id": "829903667155946_588009928011989"
+      }
+   ],
+   "paging": {
+      "previous": "https://graph.facebook.com/v2.5/829903667155946/feed?since=1456574177&access_token=CAALYPuZBictwBACmi0tN32ZA52B3soBEnlTJRR7Tdy6rnswnZAYPY7FqNZAuOUxcL95T5OZBOlbZAYBPiBJyMdkiDDZA055HrNFZAFdwAZBKuo7Cbf6ZBZAtEjZCkMu7t5WIx1b9p79JT66viiYXLFZCOKqJjcMuQBiStr2NZAicSUJfoiDe0krConS55BjF0hWd74FVHKZATZC6KRBEqwZDZD&limit=25&__paging_token=enc_AdBw4BhNBRPb5meqbsracCR2pk9Gt46JzKi7iFDFntDPUDbN9mqZBzhr8hxFr7DaebNZCcwBsVIO80szWim65NX3ue7WxZA6PqaL5qpMyVqTVAMZAAZDZD&__previous=1",
+      "next": "https://graph.facebook.com/v2.5/829903667155946/feed?access_token=CAALYPuZBictwBACmi0tN32ZA52B3soBEnlTJRR7Tdy6rnswnZAYPY7FqNZAuOUxcL95T5OZBOlbZAYBPiBJyMdkiDDZA055HrNFZAFdwAZBKuo7Cbf6ZBZAtEjZCkMu7t5WIx1b9p79JT66viiYXLFZCOKqJjcMuQBiStr2NZAicSUJfoiDe0krConS55BjF0hWd74FVHKZATZC6KRBEqwZDZD&limit=25&until=1418673177&__paging_token=enc_AdATyrCwwsGrZCZAHzIW6NMIEtcY4eaHqgejUzNUqI3T7WYPva4voZCHLtxhpIwPAt0mtn8LaqIsECd3YUfxULw5Nem9O2uTLzQpDTbhYzICDYqZBQZDZD"
+   }
+}

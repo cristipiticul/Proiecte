@@ -1,0 +1,12 @@
+. /opt/arduino_ide_intel/hardware/tools/i586/environment-setup-i586-poky-linux-uclibc
+
+./configure --prefix=$HOME/wolfssl_try3  --enable-ecc --enable-supportedcurves C_EXTRA_FLAGS="-DWOLFSSL_STATIC_RSA" --host=i586-poky-linux-uclibc --target=i586-poky-linux-uclibc
+
+rm /opt/arduino_ide_intel/hardware/tools/i586/sysroots/i586-poky-linux-uclibc/usr/lib/libwolfssl*
+cp lib* /opt/arduino_ide_intel/hardware/tools/i586/sysroots/i586-poky-linux-uclibc/usr/lib/
+
+sudo mount /media/cristi/Galileo/image-full-galileo-clanton.ext3 /mnt/galileo/ -o loop
+sudo rm /mnt/galileo/usr/lib/libwolfssl.*
+sudo rsync -a lib* /mnt/galileo/usr/lib/
+sudo umount /mnt/galileo 
+

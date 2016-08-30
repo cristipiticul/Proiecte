@@ -1,0 +1,2 @@
+TODO:
+Define 2 types of posts. Blink the led differently when the new post is of one type.
