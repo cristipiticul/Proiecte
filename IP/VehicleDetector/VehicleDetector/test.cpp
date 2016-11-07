@@ -11,6 +11,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <queue>
 
 using namespace cv;
 using namespace std;
@@ -166,14 +167,21 @@ void showGrayscaleOpticalFlow(Mat image_prev, Mat image_next)
 	waitKey(0);
 }
 
+int image_nr = 0;
+char image_name[20];
 void computeDenseOpticalFlow(Mat image_prev, Mat image_next)
 {
+	sprintf(image_name, "output_images\\input_%i.png", image_nr);
+	imwrite(image_name, image_prev);
 	Mat image_prev_red;
 	extractChannel(image_prev, image_prev_red, 2);
 	Mat image_prev_green;
 	extractChannel(image_prev, image_prev_green, 1);
 	Mat image_prev_blue;
 	extractChannel(image_prev, image_prev_blue, 0);
+	imwrite("output_images\\red.png", image_prev_red);
+	imwrite("output_images\\green.png", image_prev_green);
+	imwrite("output_images\\blue.png", image_prev_blue);
 
 	Mat image_next_red;
 	extractChannel(image_next, image_next_red, 2);
@@ -183,19 +191,27 @@ void computeDenseOpticalFlow(Mat image_prev, Mat image_next)
 	extractChannel(image_next, image_next_blue, 0);
 
 	Mat optical_flow_red;
-	calcOpticalFlowFarneback(image_prev_red, image_next_red, optical_flow_red, 0.5, 3, 15, 3, 5, 1.2, 0);
+	calcOpticalFlowFarneback(image_prev_red, image_next_red, optical_flow_red, 0.5, 3, 10, 3, 5, 1.2, 0);
+
+	Mat optical_flow_green;
+	calcOpticalFlowFarneback(image_prev_green, image_next_green, optical_flow_green, 0.5, 3, 10, 3, 5, 1.2, 0);
+
+	Mat optical_flow_blue;
+	calcOpticalFlowFarneback(image_prev_blue, image_next_blue, optical_flow_blue, 0.5, 3, 10, 3, 5, 1.2, 0);
 
 	Mat red_flow_img(image_prev.size(), CV_8UC1);
-	float max_d = 2348;
+	float max_red_flow = 2348;
+	float sum_flows = 0.0f;
 	for (int i = 0; i < image_prev.size().height; i++) {
 		for (int j = 0; j < image_prev.size().width; j++) {
 			float dy = optical_flow_red.at<Point2f>(i, j).y;
 			float dx = optical_flow_red.at<Point2f>(i, j).x;
 			float d = dx * dx + dy * dy;
-			if (d > max_d) {
-				max_d = d;
+			sum_flows += d;
+			if (d > max_red_flow) {
+				max_red_flow = d;
 			}
-			int color = (int)(d * 255.0f / max_d);
+			int color = (int)(d * 10.0f);
 			if (color > 255) {
 				color = 255;
 			}
@@ -206,19 +222,18 @@ void computeDenseOpticalFlow(Mat image_prev, Mat image_next)
 		}
 	}
 
-	Mat optical_flow_green;
-	calcOpticalFlowFarneback(image_prev_green, image_next_green, optical_flow_green, 0.5, 3, 15, 3, 5, 1.2, 0);
-
 	Mat green_flow_img(image_prev.size(), CV_8UC1);
+	float max_green_flow = 2348;
 	for (int i = 0; i < image_prev.size().height; i++) {
 		for (int j = 0; j < image_prev.size().width; j++) {
 			float dy = optical_flow_green.at<Point2f>(i, j).y;
 			float dx = optical_flow_green.at<Point2f>(i, j).x;
 			float d = dx * dx + dy * dy;
-			if (d > max_d) {
-				max_d = d;
+			sum_flows += d;
+			if (d > max_green_flow) {
+				max_green_flow = d;
 			}
-			int color = (int)(d * 255.0f / max_d);
+			int color = (int)(d * 10.0f);
 			if (color > 255) {
 				color = 255;
 			}
@@ -228,9 +243,106 @@ void computeDenseOpticalFlow(Mat image_prev, Mat image_next)
 			green_flow_img.at<unsigned char>(i, j) = (unsigned char)(color);
 		}
 	}
+
+	Mat blue_flow_img(image_prev.size(), CV_8UC1);
+	float max_blue_flow = 2348;
+	for (int i = 0; i < image_prev.size().height; i++) {
+		for (int j = 0; j < image_prev.size().width; j++) {
+			float dy = optical_flow_blue.at<Point2f>(i, j).y;
+			float dx = optical_flow_blue.at<Point2f>(i, j).x;
+			float d = dx * dx + dy * dy;
+			sum_flows += d;
+			if (d > max_blue_flow) {
+				max_blue_flow = d;
+			}
+			int color = (int)(d * 10.0f);
+			if (color > 255) {
+				color = 255;
+			}
+			if (color < 0) {
+				color = 0;
+			}
+			blue_flow_img.at<unsigned char>(i, j) = (unsigned char)(color);
+		}
+	}
+	float max_flow = max(max_blue_flow, max(max_green_flow, max_red_flow));
+
+	const float MIN_FLOW_SQUARED = 160;
+	Mat image_prev_visible;
+	image_prev.convertTo(image_prev_visible, CV_8U);
+	Mat big_flow(image_prev.rows, image_prev.cols, CV_8U);
+	for (int i = 0; i < image_prev.size().height; i++) {
+		for (int j = 0; j < image_prev.size().width; j++) {
+			Point2f flows[3];
+			flows[0] = optical_flow_red.at<Point2f>(i, j);
+			flows[1] = optical_flow_green.at<Point2f>(i, j);
+			flows[2] = optical_flow_blue.at<Point2f>(i, j);
+			for (int channel = 0; channel < 3; channel++) {
+				if (flows[channel].x * flows[channel].x + flows[channel].y * flows[channel].y > MIN_FLOW_SQUARED) {
+					big_flow.at<unsigned char>(i, j) = 255;
+				} else {
+					big_flow.at<unsigned char>(i, j) = 0;
+				}
+			}
+		}
+	}
+
+	const int MIN_CAR_WIDTH = 100;
+	const int MIN_CAR_HEIGHT = 60;
+	const int dx[] = { -1, 0, 1, 0 };
+	const int dy[] = { 0, -1, 0, 1 };
+	sprintf(image_name, "output_images\\flow_%i.png", image_nr);
+	imwrite(image_name, big_flow);
+
+	for (int i = 0; i < image_prev.rows; i++) {
+		for (int j = 0; j < image_prev.cols; j++) {
+			if (big_flow.at<unsigned char>(i, j) == 255) {
+				Rect2i boundary(j, i, 0, 0);
+				queue<Point2i> q;
+				q.push(Point2i(j, i));
+				big_flow.at<unsigned char>(i, j) = 0;
+				while (!q.empty()) {
+					Point2i p = q.front();
+					if (p.x < boundary.x) {
+						boundary.x = p.x;
+					}
+					if (p.y < boundary.y) {
+						boundary.y = p.y;
+					}
+					if (p.x > boundary.x + boundary.width) {
+						boundary.width = p.x - boundary.x;
+					}
+					if (p.y > boundary.y + boundary.height) {
+						boundary.height = p.y - boundary.y;
+					}
+
+					for (int dir = 0; dir < 4; dir++) {
+						Point2i new_p(p.x + dx[dir], p.y + dy[dir]);
+						if (new_p.inside(Rect2i(0, 0, image_prev.cols, image_prev.rows)) && big_flow.at<unsigned char>(new_p.y, new_p.x) == 255) {
+							big_flow.at<unsigned char>(new_p.y, new_p.x) = 0;
+							q.push(new_p);
+						}
+					}
+
+					q.pop();
+				}
+				if (boundary.width >= MIN_CAR_WIDTH && boundary.height >= MIN_CAR_HEIGHT) {
+					rectangle(image_prev_visible, boundary, Scalar(255, 0, 0), 2);
+				}
+			}
+		}
+	}
+
 	int nr_frame = 0;
-	//imshow("Red flow img", red_flow_img);
-	//imshow("Green flow img", green_flow_img);
+
+	sprintf(image_name, "output_images\\output_%i.png", image_nr);
+	imwrite(image_name, image_prev_visible);
+	image_nr++;
+
+	imshow("Image Prev", image_prev_visible);
+	imshow("Red flow img", red_flow_img);
+	imshow("Green flow img", green_flow_img);
+	imshow("Blue flow img", blue_flow_img);
 	waitKey(0);
 }
 
@@ -314,18 +426,51 @@ inline int difference(Mat img1, int i1, int j1, Mat img2, int i2, int j2)
 	return delta;
 }
 
-int main(int argc, char** argv)
+int main232(int argc, char** argv)
 {
+	VideoCapture capture;
+	Mat image_prev;
+	Mat image_next;
+	capture.set(CV_CAP_PROP_FOURCC, CV_FOURCC('A', 'V', 'C', '1'));
+	capture.open("FroggerHighway.mp4");
+	if (!capture.isOpened()) {
+		cerr << "Failed to open video file!\n" << endl;
+		system("Pause");
+		return 1;
+	}
+	capture.set(CAP_PROP_POS_FRAMES, 50);
+	capture >> image_prev;
+	resize(image_prev, image_prev, image_prev.size() / 2);
+	while (true) {
+		capture >> image_next;
+		resize(image_next, image_next, image_next.size() / 2);
+		computeDenseOpticalFlow(image_prev, image_next);
+		image_next.copyTo(image_prev);
+	}
+	/*
 	Mat image_prev;
 	image_prev = imread("0000\\000000.png", CV_LOAD_IMAGE_COLOR);
+	image_prev.convertTo(image_prev, CV_64FC3);
 	Mat image_next;
 	image_next = imread("0000\\000001.png", CV_LOAD_IMAGE_COLOR);
+	image_next.convertTo(image_next, CV_64FC3);
+	int image_nr = 2;
+	char image_name_buf[20];
+
+	while (!image_next.empty()) {
+		computeDenseOpticalFlow(image_prev, image_next);
+		image_prev = image_next;
+		sprintf(image_name_buf, "0000\\%06d.png", image_nr);
+		image_next = imread(image_name_buf, CV_LOAD_IMAGE_COLOR);
+		image_nr++;
+	}
 
 	if (image_prev.empty() || image_next.empty()) // Check for invalid input
 	{
 		cout << "Could not open or find the image" << std::endl;
 		return -1;
 	}
+	*/
 
 
 	// showHistogram(image_prev);
@@ -389,12 +534,10 @@ int main(int argc, char** argv)
 	imshow("value", channels[2]);
 	waitKey();*/
 
-	//computeDenseOpticalFlow(image_prev, image_next);
-
-	//return 0;
-
-	showGrayscaleOpticalFlow(image_prev, image_next);
 	return 0;
+
+	// showGrayscaleOpticalFlow(image_prev, image_next);
+	// return 0;
 
 	Mat dx = Mat_<Vec3f>(Size(image_prev.cols, image_prev.rows));
 	Mat dy = Mat_<Vec3f>(Size(image_prev.cols, image_prev.rows));
